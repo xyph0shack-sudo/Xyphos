@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xyph0s | Cyber Security & OSINT</title>
+    <style>
+        /* --- Шрифты и сброс --- */
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000;
+            color: #0F0;
+            font-family: 'VT323', monospace;
+            overflow-x: hidden;
+            font-size: 20px;
+            line-height: 1.6;
+        }
+
+        /* --- Фон Матрицы --- */
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+        /* --- CRT Эффект (Старый монитор) --- */
+        .crt::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.85); /* Затемнение фона чтобы текст читался */
+            border-left: 1px solid #0F0;
+            border-right: 1px solid #0F0;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+        }
+
+        /* --- Навигация --- */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 2px dashed #0F0;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            text-shadow: 0 0 10px #0F0;
+            animation: glitch 1s linear infinite;
+        }
+
+        .menu a {
+            color: #0F0;
+            text-decoration: none;
+            margin-left: 20px;
+            text-transform: uppercase;
+            border: 1px solid transparent;
+            padding: 5px 10px;
+            transition: 0.3s;
+        }
+
+        .menu a:hover {
+            background: #0F0;
+            color: #000;
+            box-shadow: 0 0 15px #0F0;
+            cursor: pointer;
+        }
+
+        /* --- Секции --- */
+        section {
+            margin-bottom: 50px;
+            opacity: 0; /* Для анимации появления */
+            transform: translateY(20px);
+            transition: opacity 1s, transform 1s;
+        }
+
+        section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h2 {
+            font-size: 28px;
+            border-bottom: 1px solid #0F0;
+            display: inline-block;
+            margin-bottom: 15px;
+            padding-right: 20px;
+        }
+
+        h2::before {
+            content: "> ";
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-shadow: 0 0 2px rgba(0, 255, 0, 0.5);
+        }
+
+        ul {
+            list-style: none;
+            margin-left: 20px;
+        }
+
+        ul li::before {
+            content: "[+] ";
+            color: #0F0;
+        }
+
+        /* --- Hero блок (Приветствие) --- */
+        #hero h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .typing-cursor::after {
+            content: '█';
+            animation: blink 1s step-end infinite;
+        }
+
+        /* --- Кнопка Телеграм --- */
+        .btn-tg {
+            display: inline-block;
+            background: #000;
+            color: #0F0;
+            border: 2px solid #0F0;
+            padding: 15px 30px;
+            font-size: 24px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            box-shadow: 0 0 10px #0F0;
+        }
+
+        .btn-tg:hover {
+            background: #0F0;
+            color: #000;
+            box-shadow: 0 0 30px #0F0, inset 0 0 10px #000;
+        }
+
+        /* --- Анимации --- */
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px,0) skew(0deg); }
+            4%, 60% { transform: translate(-2px,0) skew(0deg); }
+            62% { transform: translate(0,0) skew(5deg); }
+        }
+
+        /* --- Адаптив --- */
+        @media (max-width: 768px) {
+            .menu { display: none; } /* Упрощаем меню для мобильных */
+            nav { justify-content: center; }
+            #hero h1 { font-size: 32px; }
+            .container { padding: 10px; width: 95%; }
+        }
+
+    </style>
+</head>
+<body class="crt">
+
+    <canvas id="matrix"></canvas>
+
+    <div class="container">
+        <nav>
+            <div class="logo">&lt;Xyph0s /&gt;</div>
+            <div class="menu">
+                <a href="#about">Bio</a>
+                <a href="#info">Data</a>
+                <a href="#contact">Connect</a>
+            </div>
+        </nav>
+
+        <section id="hero" class="visible">
+            <h1>SYSTEM STATUS: <span id="typing-text" class="typing-cursor"></span></h1>
+            <p style="color: #ccc;">// Initializing secure connection...</p>
+        </section>
+
+        <section id="about">
+            <h2>WHOAMI</h2>
+            <p><strong>Идентификатор:</strong> Xyph0s</p>
+            <p><strong>Роль:</strong> Эксперт по кибербезопасности | OSINT Специалист</p>
+            <p>Я — тень в цифровом пространстве. Моя работа заключается в поиске уязвимостей там, где другие видят лишь код, и нахождении информации, которая считается скрытой. </p>
+            <p>Мой путь начался с глубокого изучения сетевых протоколов и криптографии. Сейчас я занимаюсь анализом угроз, тестированием на проникновение (Penetration Testing) и цифровой разведкой.</p>
+            <ul>
+                <li>Аудит безопасности систем</li>
+                <li>Поиск цифровых следов</li>
+                <li>Деанонимизация угроз</li>
+            </ul>
+        </section>
+
+        <section id="info">
+            <h2>DATABASE_INFO</h2>
+            
+            <h3>> ЧТО ТАКОЕ КИБЕРБЕЗОПАСНОСТЬ?</h3>
+            <p>Это искусство защиты сетей, устройств и данных от несанкционированного доступа или преступного использования. Это не просто антивирус, это комплексная архитектура защиты, включающая в себя криптографию, сетевую защиту и социальную инженерию.</p>
+            <br>
+            <h3>> ЧТО ТАКОЕ OSINT?</h3>
+            <p><strong>Open Source Intelligence</strong> (Разведка по открытым источникам). Это методология сбора и анализа информации из общедоступных источников. </p>
+            <p>В умелых руках любой публичный бит информации — фото в соцсетях, DNS-запись или метаданные файла — превращается в часть пазла, позволяющего составить полный профиль цели или организации.</p>
+        </section>
+
+        <section id="contact">
+            <h2>ESTABLISH_CONNECTION</h2>
+            <p>Каналы связи зашифрованы. Если тебе нужна помощь с аудитом безопасности или расследованием, используй защищенный канал ниже.</p>
+            <p style="color: #f00;">[!] Внимание: Не используй этот контакт для нелегальных запросов.</p>
+            
+            <div style="text-align: center; margin-top: 40px;">
+                <a href="https://t.me/Xyph0s" target="_blank" class="btn-tg">
+                    >>> СВЯЗАТЬСЯ: @Xyph0s
+                </a>
+            </div>
+        </section>
+
+        <footer style="text-align: center; margin-top: 50px; border-top: 1px solid #0F0; padding-top: 20px; font-size: 14px; color: #666;">
+            <p>© 2025 Xyph0s Systems. All rights reserved.</p>
+            <p>End of line.</p>
+        </footer>
+    </div>
+
+    <script>
+        // --- 1. Эффект матрицы ---
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const alphabet = katakana.split('');
+
+        const fontSize = 16;
+        const columns = canvas.width/fontSize;
+
+        const drops = [];
+        for(let x = 0; x < columns; x++)
+            drops[x] = 1;
+
+        const draw = () => {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#0F0';
+            ctx.font = fontSize + 'px monospace';
+
+            for(let i = 0; i < drops.length; i++) {
+                const text = alphabet[Math.floor(Math.random()*alphabet.length)];
+                ctx.fillText(text, i*fontSize, drops[i]*fontSize);
+
+                if(drops[i]*fontSize > canvas.height && Math.random() > 0.975)
+                    drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(draw, 33);
+
+        // Ресайз окна
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // --- 2. Эффект печатной машинки ---
+        const textToType = "ONLINE. ACCESS GRANTED.";
+        const typeElement = document.getElementById('typing-text');
+        let typeIndex = 0;
+
+        function typeWriter() {
+            if (typeIndex < textToType.length) {
+                typeElement.innerHTML += textToType.charAt(typeIndex);
+                typeIndex++;
+                setTimeout(typeWriter, 100);
+            }
+        }
+        
+        // Запуск печати после загрузки
+        window.onload = function() {
+            setTimeout(typeWriter, 500);
+        };
+
+        // --- 3. Появление секций при скролле ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('section').forEach(section => {
+            observer.observe(section);
+        });
+
+    </script>
+</body>
+</html>
